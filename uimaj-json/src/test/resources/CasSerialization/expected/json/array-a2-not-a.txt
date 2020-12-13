@@ -1,0 +1,10 @@
+{
+  "_views" : {
+    "_InitialView" : {
+      "RefTypes" : [
+        {"sofa" : 2,  "aArrayFS" : [
+            {"_type" : "RefTypes",  "sofa" : 2 },  4, 
+            {"_type" : "RefTypes",  "sofa" : 2 } ] },  4 ] } }, 
+  "_referenced_fss" : {
+    "2" : {"_type" : "Sofa",  "sofaNum" : 1,  "sofaID" : "_InitialView" }, 
+    "4" : {"_type" : "RefTypes",  "sofa" : 2 } } }
