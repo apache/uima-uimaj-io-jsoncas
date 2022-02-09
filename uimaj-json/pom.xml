@@ -23,11 +23,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.uima</groupId>
-    <artifactId>uimaj-parent</artifactId>
-    <version>3.3.0-SNAPSHOT</version>
-    <relativePath>../uimaj-parent/pom.xml</relativePath>
+    <artifactId>parent-pom</artifactId>
+    <relativePath />
+    <version>14</version>
   </parent>
-  <artifactId>uimaj-json</artifactId>
+  <artifactId>uimaj-json2</artifactId>
   <name>Apache UIMA Base: ${project.artifactId}: JSON</name>
   <description>JSON support for UIMA SDK</description>
 
@@ -39,60 +39,71 @@
   </scm>
 
   <properties>
-    <uimaScmProject>${project.artifactId}</uimaScmProject>
+    <uima-version>3.3.0-SNAPSHOT</uima-version>
+    <slf4j-version>1.7.25</slf4j-version>
+    <log4j-version>2.10.0</log4j-version>
+    <jackson-version>2.12.4</jackson-version>
+    <junit-version>5.7.2</junit-version>
+    
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.uima</groupId>
       <artifactId>uimaj-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${uima-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
+      <version>${jackson-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <version>${jackson-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
+      <version>${jackson-version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.uima</groupId>
       <artifactId>uimaj-test-util</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${uima-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.uima</groupId>
       <artifactId>uimaj-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${uima-version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-jdk14</artifactId>
+      <version>${slf4j-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -129,13 +140,6 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
       <version>1.8</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.uima</groupId>
-      <artifactId>uimaj-core</artifactId>
-      <version>${project.parent.version}</version>
-      <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
   </dependencies>

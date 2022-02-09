@@ -1,0 +1,286 @@
+{
+  "%TYPES" : {
+    "FloatListHolder" : {
+      "%NAME" : "FloatListHolder",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "floatList" : {
+        "%NAME" : "floatList",
+        "%RANGE" : "uima.cas.FloatList"
+      }
+    },
+    "FloatListHolderMR" : {
+      "%NAME" : "FloatListHolderMR",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "floatList" : {
+        "%NAME" : "floatList",
+        "%RANGE" : "uima.cas.FloatList"
+      }
+    },
+    "FsListHolder" : {
+      "%NAME" : "FsListHolder",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "fsList" : {
+        "%NAME" : "fsList",
+        "%RANGE" : "uima.cas.FSList"
+      }
+    },
+    "FsListHolderMR" : {
+      "%NAME" : "FsListHolderMR",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "fsList" : {
+        "%NAME" : "fsList",
+        "%RANGE" : "uima.cas.FSList"
+      }
+    },
+    "IntListHolder" : {
+      "%NAME" : "IntListHolder",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "intList" : {
+        "%NAME" : "intList",
+        "%RANGE" : "uima.cas.IntegerList"
+      }
+    },
+    "IntListHolderMR" : {
+      "%NAME" : "IntListHolderMR",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "intList" : {
+        "%NAME" : "intList",
+        "%RANGE" : "uima.cas.IntegerList"
+      }
+    },
+    "StringListHolder" : {
+      "%NAME" : "StringListHolder",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "stringList" : {
+        "%NAME" : "stringList",
+        "%RANGE" : "uima.cas.StringList"
+      }
+    },
+    "StringListHolderMR" : {
+      "%NAME" : "StringListHolderMR",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "stringList" : {
+        "%NAME" : "stringList",
+        "%RANGE" : "uima.cas.StringList"
+      }
+    }
+  },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 1,
+    "%TYPE" : "FloatListHolder",
+    "@floatList" : 2
+  }, {
+    "%ID" : 3,
+    "%TYPE" : "FloatListHolderMR",
+    "@floatList" : 4
+  }, {
+    "%ID" : 5,
+    "%TYPE" : "FsListHolder",
+    "@fsList" : 6
+  }, {
+    "%ID" : 7,
+    "%TYPE" : "FsListHolderMR",
+    "@fsList" : 8
+  }, {
+    "%ID" : 9,
+    "%TYPE" : "IntListHolder",
+    "@intList" : 10
+  }, {
+    "%ID" : 11,
+    "%TYPE" : "IntListHolderMR",
+    "@intList" : 12
+  }, {
+    "%ID" : 13,
+    "%TYPE" : "StringListHolder",
+    "@stringList" : 14
+  }, {
+    "%ID" : 15,
+    "%TYPE" : "StringListHolderMR",
+    "@stringList" : 16
+  }, {
+    "%ID" : 17,
+    "%TYPE" : "uima.cas.EmptyFSList"
+  }, {
+    "%ID" : 18,
+    "%TYPE" : "uima.cas.EmptyFloatList"
+  }, {
+    "%ID" : 19,
+    "%TYPE" : "uima.cas.EmptyIntegerList"
+  }, {
+    "%ID" : 20,
+    "%TYPE" : "uima.cas.EmptyStringList"
+  }, {
+    "%ID" : 21,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 17,
+    "@head" : 22
+  }, {
+    "%ID" : 23,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 21,
+    "@head" : 24
+  }, {
+    "%ID" : 25,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 17,
+    "@head" : 22
+  }, {
+    "%ID" : 6,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 25,
+    "@head" : 24
+  }, {
+    "%ID" : 26,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 17,
+    "@head" : 22
+  }, {
+    "%ID" : 8,
+    "%TYPE" : "uima.cas.NonEmptyFSList",
+    "@tail" : 26,
+    "@head" : 24
+  }, {
+    "%ID" : 27,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 18,
+    "head" : -1.0
+  }, {
+    "%ID" : 28,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 27,
+    "head" : 0.0
+  }, {
+    "%ID" : 29,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 28,
+    "head" : 1.0
+  }, {
+    "%ID" : 30,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 29,
+    "#head" : "NaN"
+  }, {
+    "%ID" : 31,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 30,
+    "#head" : "-Infinity"
+  }, {
+    "%ID" : 32,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 31,
+    "#head" : "Infinity"
+  }, {
+    "%ID" : 33,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 32,
+    "head" : 1.401298464324817E-45
+  }, {
+    "%ID" : 2,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 33,
+    "head" : 3.4028234663852886E38
+  }, {
+    "%ID" : 34,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 18,
+    "head" : -1.0
+  }, {
+    "%ID" : 35,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 34,
+    "head" : 0.0
+  }, {
+    "%ID" : 36,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 35,
+    "head" : 1.0
+  }, {
+    "%ID" : 37,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 36,
+    "#head" : "NaN"
+  }, {
+    "%ID" : 38,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 37,
+    "#head" : "-Infinity"
+  }, {
+    "%ID" : 39,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 38,
+    "#head" : "Infinity"
+  }, {
+    "%ID" : 40,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 39,
+    "head" : 1.401298464324817E-45
+  }, {
+    "%ID" : 4,
+    "%TYPE" : "uima.cas.NonEmptyFloatList",
+    "@tail" : 40,
+    "head" : 3.4028234663852886E38
+  }, {
+    "%ID" : 41,
+    "%TYPE" : "uima.cas.NonEmptyIntegerList",
+    "@tail" : 19,
+    "head" : 1
+  }, {
+    "%ID" : 10,
+    "%TYPE" : "uima.cas.NonEmptyIntegerList",
+    "@tail" : 41,
+    "head" : 2
+  }, {
+    "%ID" : 42,
+    "%TYPE" : "uima.cas.NonEmptyIntegerList",
+    "@tail" : 19,
+    "head" : 1
+  }, {
+    "%ID" : 12,
+    "%TYPE" : "uima.cas.NonEmptyIntegerList",
+    "@tail" : 42,
+    "head" : 2
+  }, {
+    "%ID" : 43,
+    "%TYPE" : "uima.cas.NonEmptyStringList",
+    "@tail" : 20,
+    "head" : "blah"
+  }, {
+    "%ID" : 14,
+    "%TYPE" : "uima.cas.NonEmptyStringList",
+    "@tail" : 43,
+    "head" : "blub"
+  }, {
+    "%ID" : 44,
+    "%TYPE" : "uima.cas.NonEmptyStringList",
+    "@tail" : 20,
+    "head" : "blah"
+  }, {
+    "%ID" : 16,
+    "%TYPE" : "uima.cas.NonEmptyStringList",
+    "@tail" : 44,
+    "head" : "blub"
+  }, {
+    "%ID" : 45,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView"
+  }, {
+    "%ID" : 22,
+    "%TYPE" : "uima.tcas.Annotation",
+    "@sofa" : 45,
+    "begin" : 0,
+    "end" : 1
+  }, {
+    "%ID" : 24,
+    "%TYPE" : "uima.tcas.Annotation",
+    "@sofa" : 45,
+    "begin" : 1,
+    "end" : 2
+  } ],
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 45,
+      "%MEMBERS" : [ 1, 3, 5, 7, 9, 11, 13, 15, 23 ]
+    }
+  }
+}

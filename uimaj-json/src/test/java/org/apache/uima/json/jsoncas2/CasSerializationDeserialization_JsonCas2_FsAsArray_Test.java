@@ -22,10 +22,11 @@ import static java.lang.invoke.MethodHandles.lookup;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.uima.cas.serdes.SerDesCasIOTestUtils.createCasMaybeWithTypesystem;
+import static org.apache.uima.cas.serdes.SerDesCasIOTestUtils.CasLoadOptions.PRESERVE_ORIGINAL_TSI;
 import static org.apache.uima.cas.serdes.TestType.ONE_WAY;
 import static org.apache.uima.cas.serdes.TestType.SER_DES;
 import static org.apache.uima.cas.serdes.TestType.SER_REF;
-import static org.apache.uima.cas.serdes.datasuites.XmiFileDataSuite.XMI_SUITE_BASE_PATH;
+import static org.apache.uima.json.jsoncas2.Fixtures.readCasManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,11 +35,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.uima.cas.CAS;
+import org.apache.uima.cas.impl.CASImpl;
 import org.apache.uima.cas.serdes.SerDesCasIOTestUtils;
+import org.apache.uima.cas.serdes.SerDesCasIOTestUtils.CasLoadOptions;
 import org.apache.uima.cas.serdes.datasuites.MultiFeatureRandomCasDataSuite;
 import org.apache.uima.cas.serdes.datasuites.MultiTypeRandomCasDataSuite;
 import org.apache.uima.cas.serdes.datasuites.ProgrammaticallyCreatedCasDataSuite;
@@ -51,23 +53,25 @@ import org.apache.uima.cas.serdes.transitions.CasSerDesCycleConfiguration;
 import org.apache.uima.json.jsoncas2.mode.FeatureStructuresMode;
 import org.apache.uima.json.jsoncas2.mode.OffsetConversionMode;
 import org.apache.uima.json.jsoncas2.mode.SofaMode;
+import org.apache.uima.util.CasIOUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class CasSerializationDeserialization_JsonCas2_FsAsArray_Test {
 
   private static final String CAS_FILE_NAME = "data.json";
+
   private static final int RANDOM_CAS_ITERATIONS = 20;
 
   private static final List<CasSerDesCycleConfiguration> serDesCycles = asList( //
           new CasSerDesCycleConfiguration("DEFAULT (default offsets)", //
-                  (a, b) -> serdes(a, b, null)),
+                  (a, b) -> serdes(a, b, null, PRESERVE_ORIGINAL_TSI)),
           new CasSerDesCycleConfiguration("DEFAULT (UTF-16 offsets)", //
-                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_16)),
+                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_16, PRESERVE_ORIGINAL_TSI)),
           new CasSerDesCycleConfiguration("DEFAULT (UTF-8 offsets)", //
-                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_8)),
+                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_8, PRESERVE_ORIGINAL_TSI)),
           new CasSerDesCycleConfiguration("DEFAULT (UTF-32 offsets)", //
-                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_32)));
+                  (a, b) -> serdes(a, b, OffsetConversionMode.UTF_32, PRESERVE_ORIGINAL_TSI)));
   // new CasSerDesCycleConfiguration(FORMAT + " / LENIENT", //
   // (a, b) -> serdes(a, b, FORMAT, LENIENT)));
 
@@ -88,16 +92,23 @@ public class CasSerializationDeserialization_JsonCas2_FsAsArray_Test {
     deserializer.deserialize(aSourceCasFile.toFile(), aTargetCas);
   }
 
-  public static void serdes(CAS aSourceCas, CAS aTargetCas, OffsetConversionMode aOcm)
-          throws Exception {
+  public static void serdes(CAS aSourceCas, CAS aTargetCas, OffsetConversionMode aOcm,
+          CasLoadOptions... aOptions) throws Exception {
     byte[] buffer;
-    try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+    byte[] tsiBuffer;
+    try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+            ByteArrayOutputStream tsiTarget = new ByteArrayOutputStream()) {
       JsonCas2Serializer serializer = new JsonCas2Serializer();
       serializer.setFsMode(FeatureStructuresMode.AS_ARRAY);
       serializer.setSofaMode(SofaMode.AS_REGULAR_FEATURE_STRUCTURE);
       serializer.setOffsetConversionMode(aOcm);
       serializer.serialize(aSourceCas, os);
       buffer = os.toByteArray();
+      // CasIOUtils.save only saves TSI data to the TSI stream if it is not already included in the
+      // CAS stream (type system embedded). Thus, to ensure we always get the TSI info, we serialize
+      // it separately.
+      CasIOUtils.writeTypeSystem(aSourceCas, tsiTarget, true);
+      tsiBuffer = tsiTarget.toByteArray();
     }
 
     Path targetFile = SER_DES.getTargetFolder(lookup().lookupClass()).resolve(CAS_FILE_NAME);
@@ -106,7 +117,13 @@ public class CasSerializationDeserialization_JsonCas2_FsAsArray_Test {
       os.write(buffer);
     }
 
-    try (InputStream is = new ByteArrayInputStream(buffer)) {
+    try (InputStream is = new ByteArrayInputStream(buffer);
+            ByteArrayInputStream tsiSource = new ByteArrayInputStream(tsiBuffer)) {
+      if (asList(aOptions).contains(CasLoadOptions.PRESERVE_ORIGINAL_TSI)) {
+        ((CASImpl) aTargetCas).getBinaryCasSerDes()
+                .setupCasFromCasMgrSerializer(readCasManager(tsiSource));
+      }
+
       JsonCas2Deserializer deserializer = new JsonCas2Deserializer();
       deserializer.setFsMode(FeatureStructuresMode.AS_ARRAY);
       deserializer.deserialize(is, aTargetCas);
@@ -129,8 +146,7 @@ public class CasSerializationDeserialization_JsonCas2_FsAsArray_Test {
 
   private static List<SerRefTestScenario> oneWayDesSerScenarios() throws Exception {
     Class<?> caller = CasSerializationDeserialization_JsonCas2_FsAsArray_Test.class;
-    return XmiFileDataSuite
-            .configurations(Paths.get("..", "uimaj-core").resolve(XMI_SUITE_BASE_PATH)).stream()
+    return XmiFileDataSuite.configurations(Fixtures.materializeTestSuite()).stream()
             .map(conf -> SerRefTestScenario.builder(caller, conf, ONE_WAY, CAS_FILE_NAME)
                     .withSerializer((cas, path) -> ser(cas, path)).build())
             .collect(toList());
