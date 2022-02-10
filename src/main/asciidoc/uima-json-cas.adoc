@@ -97,7 +97,6 @@ Keyword fields must always precede user-definable fields in the serialized JSON 
 * The keys should not be upper-case but rather lower-case, camel-case, or kebab-case
 * The JSON structure should be defined such that user-defined and predefined keys are
   clearly separated from each other. Any object contains either only user-definable keys or only predefined keys. E.g. in a feature structure, there should be an explicit key `features` under which all user-definable features are located.
-____
 
 === CAS
 
@@ -216,7 +215,6 @@ For simplicity, the UIMA JSON CAS format ignores the *Multiple references allowe
   could be turned into an array. The features could be moved into a `%FEATURE` key and also be represented as an array.
 * UIMAv3 has started using reified array types and introduced a new writing convention 
   for them using `[]` as a suffix: `uima.tcas.Annotation[]`, `uima.cas.Integer[]`. So we could consider abandoning the concept of an array element type in the type system section of the CAS JSON format and simply use the `<type>[]` convention to represent arrays of a given type. That would make the type system section more compact because we can entirely omit the `%ELEMENT_TYPE` key. The `%ELEMENT_TYPE` could still be required for other "generic" container types such as FSList unless we also introduce an alternative convention there, e.g. `FSList<Annotation>`. Also note that the UIMA Java SDK currently does not seem to retain the element type specification for an FSList featurefootnote:[https://issues.apache.org/jira/browse/UIMA-6381].
-____
 
 .Notes:
 * The Apache UIMA Java SDK does currently discard the type and feature descriptions when 
@@ -335,7 +333,6 @@ Despite having stated initially that the UIMA JSON CAS format should not make an
   arbitrary, it is mandatory that *SofA feature structures are listed before any feature structures referring to them*. So a serializer can iterate through all the views of a CAS, then first serialize the SofA feature structure and afterwards the members of the view.
 . Additionally, if the SofA uses a byte array as SofA data, then *the byte array feature 
   structure must come before the SofA feature structure* itself in the feature structures list.
-____
 
 ==== Anchor features
 
@@ -385,7 +382,6 @@ To identify features whose values may need a conversion during (de)serialization
    or put otherwise "as the unit the cursor jumps when pressing a cursor next to it and pressing the cursor left/right key". With grapheme cluster-based offsets, it should not be possible anymore to define an offset that points to the "middle of a character" as in the other encodings. However, what constitutes a grapheme cluster is not well defined and may differ from platform to platform, from programming language to programming language and even depend on the particular version of Unicode libraries and Unicode standard being used.footnote:[https://hsivonen.fi/string-length/]
 * There is a header key in the CAS which specifies which anchor encoding is being used 
   (i.e. UTF-8, UTF-16, UTF-32/codepoints or grapheme clusters - the latter possibly along with a Unicode version number and possible with some closer description of which Unicode library and version of that library was being used). If the header is absent, a default encoding is prescribed by UIMA JSON CAS.
-____
 
 == Future(!) directions
 
