@@ -1,3 +1,5 @@
+= JSON serialization of the Apache UIMA CAS
+
 == Introduction
 
 This document introduces a new JSON-based serialization format for the UIMA CAS. The new format aims to provide the new go-to solution for encoding UIMA CAS data and to facilitate working with such data cross-platform and cross-programming languages.
@@ -22,8 +24,8 @@ As general reference material on UIMA, the following sources should be considere
 
 There are already draft implementations which mostly follow the draft specification below - at least enough to try out and get an idea:
 
-* Java: https://github.com/apache/uima-uimaj/pull/137[+++https://github.com/apache/uima-uimaj/pull/137+++]
-* Python: https://github.com/dkpro/dkpro-cassis/pull/169[+++https://github.com/dkpro/dkpro-cassis/pull/169+++]
+* Java: https://github.com/apache/uima-uimaj-io-jsoncas
+* Python: https://github.com/dkpro/dkpro-cassis
 
 === Requirements
 
@@ -33,7 +35,7 @@ The new UIMA JSON CAS format should meet the following requirements:
 * contain all information required to parse it
 * contain all information contained in the UIMA CAS
 * preserve all information across a (de)serialization cycle
-* avoid ambiguitiesfootnote:[Note that this *draft* document will often propose
+* avoid ambiguities footnote:[Note that this *draft* document will often propose
   alternative data representations. The idea is to consider them and to eventually argue for a canonical representation.]
 * maybe to show a comparable (or even a better) performance in terms of size and speed
 
