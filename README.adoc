@@ -1,0 +1,459 @@
+= JSON serialization of the Apache UIMA CAS
+
+== Introduction
+
+This document introduces a new JSON-based serialization format for the UIMA CAS. The new format aims to provide the new go-to solution for encoding UIMA CAS data and to facilitate working with such data cross-platform and cross-programming languages.
+
+For the most part, the UIMA CAS XMIfootnote:[https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi] format has been the de-facto standard representation of UIMA data. However, the format has several short-comings:
+
+* it cannot be parsed without knowing the underlying UIMA type system due to ambiguities in the encoding of feature structure references and integer numbers
+* there is no way of encoding the type system information in the format
+* there are alternative set semantically equivalent way of representing arrays which complicate the implementation of a parser even if the type system is known
+* the XML format in general is no longer considered a go-to solution when it comes to representing structured data
+
+There are alternative UIMA CAS serialization formats, in particular the "binary form 6"footnote:[https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.compress] format also known as "compressed filtered with type system information". However, there is currently very little documentation about the format, so it is generally necessary to consult the Apache UIMA Java SDK implementation in order to learn how it works. This presently makes implementations of the format in other programming languages difficult.
+
+With JSON having largely taken on the role of XML in representing structured data and with JSON support being available on the broadest range of programming languages, it is the obvious option when looking for a modern cross-platform representation of UIMA CAS data.
+
+Note that there is already a JSON format implemented and released in the `uimaj-json` module of the Apache UIMA Java SDK. However, that implementation is only capable of serializing a CAS to JSON. De-serialization is not supported. Also, the existing implementation does not meet many of the requirements listed in the next section. The present UIMA JSON CAS proposal is a fresh start.
+
+As general reference material on UIMA, the following sources should be considered:
+
+* Apache UIMA Java SDKfootnote:[https://uima.apache.org/] and its documentation (reference implementation)
+*OASIS UIMA Standard 1.0footnote:[https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=uima]
+
+There are already draft implementations which mostly follow the draft specification below - at least enough to try out and get an idea:
+
+* Java: https://github.com/apache/uima-uimaj-io-jsoncas
+* Python: https://github.com/dkpro/dkpro-cassis
+
+=== Requirements
+
+The new UIMA JSON CAS format should meet the following requirements:
+
+* easy to generate and to parse
+* contain all information required to parse it
+* contain all information contained in the UIMA CAS
+* preserve all information across a (de)serialization cycle
+* avoid ambiguities footnote:[Note that this *draft* document will often propose
+  alternative data representations. The idea is to consider them and to eventually argue for a canonical representation.]
+* maybe to show a comparable (or even a better) performance in terms of size and speed
+
+=== UIMA CAS entities
+
+This section provides a very brief introduction to the entities that make up the UIMA CAS in general, because these entities will need to be represented in the UIMA JSON CAS.
+
+* *CAS* - the top-level container for all the other entities, in particular feature structures, views, and the type system
+* *Feature structures* - the nodes of an object graph. A feature structure has a *type* and any number of features. Also, every *feature* has a type which can either be primitive (integer, boolean, float, string, ...) or a reference to another feature structure.
+* *Type system* - defines which *types of feature structures* exist and, what *features* they carry and which type these features in turn have.
+* *View* - organizes a set of feature structures into a namespace. A feature structure may be a member of a view, but it does not have to be.
+
+Besides the entities identified above, there are additional types of entities the reader should be aware of, but which the UIMA JSON CAS format aims to handle transparently.
+
+* *Subject of Analysis (SofA)* - a special type of feature structure representing an unstructured data item (mostly a text string, but could also be any other kind of data, even potentially external data only referred to via an URI).
+* *Annotation* - a special type of feature structure that is anchored to a textual SofA and that has two integer features named "begin" and "end".
+
+For simplicity, the UIMA JSON CAS format should not provide special treatment to specific types of feature structures (e.g. the SofA or Annotation types). All feature structures should be handled in the same way.
+
+=== JSON
+
+JSON is short for JavaScript Object Notation. This notation defines several data types that we can work with:
+
+* *Objects*: `{ "field": value }`
+* *Arrays*: `[ value, value, value, ... ]`
+* *Literals*: integer numbers, float numbers string values, boolean values, `null`
+
+Notably, the only mechanism that JSON allows to express a relationship between two things is by nesting. That means, one cannot express that a field `x` and another field `y` even in the same object refer to the same other object - or that an object repeats in an array. Since the feature structures in the UIMA CAS form an object graph, defining an approach for object reference is one of the issues the UIMA JSON CAS specification needs to deal with.
+
+== UIMA JSON CAS specification
+
+This section examines how the different UIMA CAS entities can be encoded in JSON.
+
+=== Naming conventions
+
+Naming conventions in the UIMA JSON CAS are meant to address the following requirements:
+
+* using marker prefixes to concisely encoding essential information for which no equivalent encoding mechanism exists in JSON
+* avoiding name clashes with user-definable names
+
+==== Marker prefixes in object keys
+
+The document defines several marker prefixes for JSON object keys. For the reader’s convenience, they are listed here. They are described in more detail in other sections of the document.
+
+[width="100%",cols="11%,56%,33%",options="header",]
+|===
+|*Marker* |*Description* |*Examples*
+|`%` |Keyword marker |"%ID", "%TYPES"
+|`^` |Anchor marker on feature name keys |"^begin", "^end"
+|`@` |Reference marker on feature name keys |"@sofa"
+|===
+
+==== UIMA JSON CAS keywords
+
+Keys that have reserved names in the CAS JSON format always start with a KEYWORD_MARKER (`%`) and are upper-case. The KEYWORD_MARKER should be a character that is not a valid character at the start of an identifier in programming languages such as Java or Python. This helps avoid that names assigned e.g. to feature names clash with these keys.
+
+Keyword fields must always precede user-definable fields in the serialized JSON objects. Additionally, there may be specific order requirements on the keyword fields themselves.
+
+.Alternative suggestions:
+* The KEYWORD_MARKER should be `_` - however, `_` is a valid identifier character
+* The keys should not be upper-case but rather lower-case, camel-case, or kebab-case
+* The JSON structure should be defined such that user-defined and predefined keys are
+  clearly separated from each other. Any object contains either only user-definable keys or only predefined keys. E.g. in a feature structure, there should be an explicit key `features` under which all user-definable features are located.
+
+=== CAS
+
+The CAS is the top-level container for all other entities. In order to distinguish between the different types of entities it can contain, it is modelled as a JSON object with three fields.
+
+[source,json]
+----
+{
+  "%HEADER": ...
+  "%TYPES": ...
+  "%FEATURE_STRUCTURES": ...
+  "%VIEWS": ...
+}
+----
+
+To facilitate the implementation of streaming parsers, the fields should be encoded in the following order:
+
+[arabic]
+. *Header:* provides information to the parser on how to parse the UIMA JSON CAS. Since it controls the behavior of the parser, it must come first.
+. *Type system:* provides information about the types of feature structures and about 
+  their features.
+. *Feature structures:* contain the feature structure object graph. Parsing this section 
+  may require type system information from the previous section to fully interpret/validate the entities in the feature structures section (e.g. to indicate whether a JSON integer literal should be interpreted as a 8-bit byte, 16-bit short, 32-bit integer or 64-bit long value.
+. *Views:* provides information about the namespaces into which the feature structures 
+  have been organized. In particular, the views section may provide information about the existence of a view even if that view has no member feature structures. Each view contains a list of members referring to feature structures from the previous section.
+
+.Alternative suggestions:
+* The view section should contain an array pointing to the members of the view. The 
+  views section should then precede the feature structures section such that the parser already knows to which view a feature structure should be added when it encounters the feature structure.
+* All three sections could in principle be optional. A UIMA JSON CAS containing only a 
+  types section is essentially the equivalent of an XML type system description. A JSON CAS only containing feature structures could be sufficient if we assume that all these feature structures would be indexed by default in the default view. The views section would not be required if the CAS only contains the predefined default view.
+
+=== Header
+
+The header provides information to the parser on how to parse the UIMA JSON CAS.
+
+[width="100%",cols="17%,50%,33%",options="header",]
+|===
+|Header key |Description |Example
+|`%VERSION` |UIMA CAS JSON specification version to which the JSON document adheres |"1.0.0"
+|===
+
+.Alternative suggestions:
+* Simply keep the header keys at the top-level without introducing a header section.
+
+=== Type System
+
+This section encodes the type system definition. Every type can only be defined once. Thus, it seems reasonable to represent the type system as a JSON object with the type name being the key.
+
+[source,json]
+----
+{
+  "package.name.Foo": <type definition>,
+  "package.name.Bar": <type definition>
+}
+----
+
+.Alternative suggestions:*
+* Instead of encoding only the essential type information, it could be considered to 
+  permit extended type system information, in particular the ability to represent multiple type systems along with version information, vendor information, documentation, etc.
+* Allow importing type systems through a reference to a URL/URI.
+
+
+==== Type descriptions
+
+UIMA type descriptions are described in the Apache UIMA Java SDK reference documentationfootnote:[https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xml.component_descriptor.type_system] and we largely follow that specification. According to that specification, a type description consists of:
+
+*  *Type name:* identifier of the type in a `<namespace>.<name>` notation.
+* *Description (optional):* documentation for the type
+* *Super-type (optional):* the super-type from which the current type inherits. Can be omitted if the super-type is `uima.cas.TOP`.
+* *Features (optional):* the feature descriptions
+
+[source,json]
+----
+"package.name.Bar": {
+  "%NAME": "package.name.Bar",
+  "%SUPER_TYPE": "package.name.Foo",
+  "%DESCRIPTION": "Bar is a custom type extending the Foo type.",
+  <feature name>: <feature description>,
+  <feature name>: <feature description>,
+  ...
+}
+----
+
+==== Feature descriptions
+
+Similarly, UIMA feature descriptions are described in the Apache UIMA Java SDK reference documentationfootnote:[https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xml.component_descriptor.type_system] as consisting of:
+
+* *Feature name:* the identifier of the feature
+* *Description (optional):* documentation for the feature
+* *Range type:* the type of the feature value
+* *Element type (optional):* if the range type is an array type (e.g. 
+  `uima.cas.FSArray`) or listfootnote:[Although an element type can be specified for features of the type FSList, the Apache UIMA Java SDK does not preserve the element type for FSList - this is documented behavior.] type (i.e. `uima.cas.FSList`), then the element type indicates the type of the array members. If omitted, the default is `uima.cas.TOP`.
+* *Multiple references allowed (optional):* A boolean value hint for the (de)serializer 
+  indicating if an array requires an ID so it can be pointed to from multiple other feature structures. If this flag is set to false, the array should only be used by one feature structure which "owns" the array and thus the array could be inlined into the owning feature structure. The (de)serializer is free to ignore this flag.
+
+[source,json]
+----
+"value": {
+  "%NAME": "values",
+  "%DESCRIPTION": "The values of the feature.",
+  "%RANGE": "uima.cas.FSArray",
+  "%ELEMENT_TYPE": "package.name.Foo",
+  "%MULTIPLE_REFERENCES_ALLOWED": true
+}
+----
+
+For simplicity, the UIMA JSON CAS format ignores the *Multiple references allowed* flag and always represents arrays as separate feature structures.
+
+.Alternative suggestions:
+* Instead of using the full type name as the key in the type system JSON object, an ID 
+  or an abbreviated type name could be used. That could significantly reduce the JSON CAS size if the type field of the feature structures referred to the short name/ID. Similarly for the features.
+* Considering that the type name and feature name are used as keys, the `%NAME` field in 
+  the type/feature descriptions is redundant and can be removed (if the above suggestion of using abbreviated type/feature identifiers is not implemented)
+* Considering that the type descriptions contain a `%NAME` field, the types section 
+  could be turned into an array. The features could be moved into a `%FEATURE` key and also be represented as an array.
+* UIMAv3 has started using reified array types and introduced a new writing convention 
+  for them using `[]` as a suffix: `uima.tcas.Annotation[]`, `uima.cas.Integer[]`. So we could consider abandoning the concept of an array element type in the type system section of the CAS JSON format and simply use the `<type>[]` convention to represent arrays of a given type. That would make the type system section more compact because we can entirely omit the `%ELEMENT_TYPE` key. The `%ELEMENT_TYPE` could still be required for other "generic" container types such as FSList unless we also introduce an alternative convention there, e.g. `FSList<Annotation>`. Also note that the UIMA Java SDK currently does not seem to retain the element type specification for an FSList featurefootnote:[https://issues.apache.org/jira/browse/UIMA-6381].
+
+.Notes:
+* The Apache UIMA Java SDK does currently discard the type and feature descriptions when 
+  creating a `TypeSystemImpl` instance. Thus, the descriptions are generally lost when a type system is recovered from the CAS for serialization. To meet the requirement that no information is lost, the Apache UIMA Java SDK implementation would need to be extended to allow preserving the descriptions.
+
+=== Feature Structures
+
+The feature structures section contains the actual feature structures. The section is implemented as a JSON array containing feature structure objects.
+
+[source,json]
+----
+"%FEATURE_STRUCTURES": [
+  <feature structure>,
+  <feature structure>,
+  ...
+]
+----
+
+.Alternative suggestions:
+* It could be implemented as a JSON map using the feature structure ID as its key and 
+  the feature structure as values.
+* Each feature structure could include a special key `%VIEWS` which could provide a list 
+  of views of which the feature structure is a member. This would remove the need for the views section at the top-level of the UIMA JSON CAS except for the case where a view without any members should be declared. However, it also would be more verbose than having a list of members in each view of the views section, referring to features structures by their IDs.
+
+[width="100%",cols="50%,50%",options="header",]
+|===
+|*Reasons to use a JSON array* |*Reasons to use a JSON map*
+|Feature structure IDs are integer numbers, but a JSON map must use string keys. 
+|The space for encoding the `%ID` field name in every feature structure can be saved.
+
+|Depending on the JSON implementation being used, it can be easier to parse feature structure objects if all information is encoded in fields. Referencing to a name encoded outside the feature structure object (such as a preceding map key) may be more complicated. 
+|It is more obvious that feature structure IDs must be unique.
+
+|We can more "naturally" define a reduced form of the UIMA JSON CAS which consists only of the feature structure array. A parser can easily distinguish between a full JSON CAS and the reduced form by checking if the first JSON token is an array-start or an object-start token. 
+|
+|===
+
+==== Feature structure representation
+
+Each feature structure encodes the following information:
+
+* *Identifier:* an integer number
+* *Type:* the type of the feature structure
+* *Features (optional):* the features and feature values
+
+[source,json]
+----
+{
+  "%ID": 1,
+  "%TYPE": "package.name.Foo",
+  "@values": 2,
+  <feature name>: <feature value>,
+  ...
+}
+----
+
+NOTE: the "@values" feature here is an example of a feature referencing another feature structure, not a pre-defined feature._
+
+The identifier must be the first key in a feature structure. The type must be the second key. Both are mandatory. The rest of the feature structure lists the features and their values.
+
+==== Features structure IDs
+
+The features structure ID must be a positivefootnote:[The use of negative ID values is reserved for future extension.] integer number with the ID 0 (zero) being reserved as a "null" reference. These IDs must be unique within a particular JSON CAS document.
+
+==== Primitive features
+
+Primitive features are such with a value that is a number, string, boolean value or null. JSON provides literals for all of these. However, the UIMA type system allows a more fine-grained distinction. E.g. a number could be a 8-bit byte, 16-bit short, 32-bit integer or 64-bit long value, a 32-bit float or a 64-bit double. The JSON UIMA CAS format does not use any markers to distinguish between these different ranges as this information is not essential for parsing. If this information is important to the application layer, it should be encoded in the type system section of the JSON CAS.
+
+==== Feature structure references
+
+If a feature name is prefixed by the reference prefix `@`, then the feature value must be a JSON integer and it must be interpreted as a reference to another feature structure. The reference prefix allows the parser to distinguish between a numeric feature value and a feature reference without requiring access to the full type system description. The reference prefix is not part of the feature name and must be removed by the parser / added by the serializer.
+
+==== Array features
+
+Arrays are special kinds of feature structures in UIMA. They do not have any proper features that would be defined as part of the type system. They are simply considered as representations of multiple values. In the UIMA JSON CAS format, the array elements are encoded as a list under the special key `%ELEMENTS`.
+
+Null values in feature structure arrays and string arrays are supported as such.footnote:[The use of null values in other primitive arrays (numeric arrays, boolean arrays) is *strongly discouraged* as not all UIMA implementations may support them. In particular the Apache UIMA Java SDK does not allow null values in any other array types other than `uima.cas.StringArray` and `uima.cas.FSArray`!]
+
+[source,json]
+----
+{
+  "%ID": 1,
+  "%TYPE": "uima.cas.FSArray",
+  "%ELEMENTS": [1, null, 2]
+}
+----
+
+When (de)serializing a string array, a clear distinction must be made between array elements that are null and array elements that are empty strings.footnote:[The CAS XMI and XCAS formats cannot make a distinction between null and empty string in string arrays. The XMI serializer encodes null elements of a string array as an empty XML element and de-serializes this as an empty string element. The XCAS deserializer decodes empty strings as null.]
+
+[source,json]
+----
+{
+  "%ID": 1,
+  "%TYPE": "uima.cas.StringArray",
+  "%ELEMENTS": ["one", null, "three", ""]
+}
+----
+
+An exception to the rule of encoding the elements as a list is the `uima.cas.ByteArray`. The byte array is instead encoded as a Base64 encoded string.
+
+[source,json]
+----
+{
+  "%ID": 1,
+  "%TYPE": "uima.cas.ByteArray",
+  "%ELEMENTS": "VGhpcyBpcyBhIHRlc3Q="
+}
+----
+
+==== SofA annotations
+
+Despite having stated initially that the UIMA JSON CAS format should not make any concessions towards special types of feature structures, for the time being this draft document does impose special rules for SofA feature structures to facilitate parser implementation. These rules may or may not be lifted in future revisions:
+
+[arabic]
+. While the order of feature structures in the feature structures section is in general 
+  arbitrary, it is mandatory that *SofA feature structures are listed before any feature structures referring to them*. So a serializer can iterate through all the views of a CAS, then first serialize the SofA feature structure and afterwards the members of the view.
+. Additionally, if the SofA uses a byte array as SofA data, then *the byte array feature 
+  structure must come before the SofA feature structure* itself in the feature structures list.
+
+==== Anchor features
+
+Anchor features are features which represent pointers into the SofA data. The typical case anchor features are the `begin` and `end` features of the `uima.tcas.Annotation` type which point to character offsets in the SofA string.
+
+That said, it turns out that the definition "character offset" is a very naive one. For more details, see the section "Character offsets" later in this document.
+
+It follows that the parser may have to perform a special processing of anchor information such as character offsets using some function which converts the platform-specific offsets into a sort of canonical offsets and vice-versa during serialization and deserialization. Since users may define their own anchor features in addition to the `begin` and `end` features pre-defined by the `uima.tcas.Annotation` type, it seems reasonable to mark these features in the UIMA JSON CAS such that the parser can react appropriately. The `^` (caret) is used as a name for anchor features in the feature structures section. Note that the conversion function must know against which SofA the anchor features must be converted. Thus, a feature structure using anchor features must also contain a `@sofa` feature!
+
+=== Views
+
+The views section declares namespaces into which the feature structures may be organized. Each view has a name and a list of members. Typically, there is exactly one SofA feature structure for each view. This SofA is not a regular member of the view meaning that if we iterate over a view of a CAS in a UIMA system, the SofA is not returned. To still maintain the association between view and SofA, the SofA is modelled as a field in the JSON view object.
+
+The SofA field as well as the members list are references to feature structure IDs from the feature structures sections.
+
+[source,json]
+----
+"%VIEWS": {
+  "_InitialView": {
+    "%SOFA": 1,
+    "%MEMBERS": [2, 3, 4, 5, 6]
+  },
+  <view name>: <view>,
+  ...
+}
+----
+
+=== Character offsets
+
+In general, the go-to standard for characters is the Unicode standardfootnote:[https://home.unicode.org/[+++https://home.unicode.org/+++]]. The canonical base unit in the Unicode standard is a "codepoint" - a 32-bit value identifying a character in the Unicode table of characters. However, the bulk of characters which are used in practice are in the lower range of the Unicode table and can be comfortably encoded as 16-bit or even 8-bit values to save space. Thus, a variety of Unicode encoding standards exist: UTF-8, UTF-16 (little-endian and big-endian), and UTF-32. To further complicate the situation, multiple Unicode code points can be overlaid/combined into a so-called grapheme cluster. So what may appear a single character on screen in e.g. a web-browser which sufficiently supports the latest Unicode standard may actually consist of multiple Unicode codepoints. Thus, as several sourcesfootnote:[https://hsivonen.fi/string-length/[+++https://hsivonen.fi/string-length/+++]]^,^footnote:[https://blog.jonnew.com/posts/poo-dot-length-equals-two[+++https://blog.jonnew.com/posts/poo-dot-length-equals-two+++]] explain in more detail, the handling of "characters offsets" in the light of the Unicode standard is not trivial.
+
+To identify features whose values may need a conversion during (de)serialization, the anchor marker `^` was introduced (cf. section on "Anchor features" above).
+
+*_Note: the draft specification currently does not prefer any particular encoding scheme. Please refer to the alternative suggestions below and provide feedback._*
+
+*Alternative suggestions:*
+
+* There is a single character offset encoding mechanism prescribed by UIMA JSON CAS. 
+  This single mechanism should be based on either of the following encodings:
+** *UTF-8:* the character offsets would essentially be byte offsets into the UTF-8 
+   representation. Offset conversion would be required for programming languages which internally use a different string encoding such as Java, JavaScript or Python, but not for other languages such as Rust. The UTF-8 encoding is well defined and supported by most programming languages. It is easy to accidentally generate offsets which point to a position the "middle of a character". JSON documents are generally UTF-8 encoded, so the offsets would map directly to the string encoding of the actual UIMA CAS JSON file instead of only applying to a parsed and loaded version of the data.
+** *UTF-16:* the character offsets would represent code unit offsets into a UTF-16 
+   representation. Offset conversion would be required for programming languages which internally use a different string encoding such as Python or Rust, but not for others such as Java and JavaScript. The UTF-16 encoding is well defined and supported by most programming languages. It is easy to accidentally generate offsets which point to a position the "middle of a character". JSON documents are generally UTF-8 encoded, so the offsets really only become valid after the SofA string has been loaded from the JSON document and been re-encoded into the UTF-16 representation - a process that happens implicitly e.g. in Java and JavaScript.
+** *UTF-32 (code points):* the character offsets would represent Unicode code points. 
+   Basically the considerations for UTF-16 also apply to UTF-32. Programming languages operating internally on code points include e.g. Python 3. The UTF-32 encoding is well defined and supported by most programming languages. It is still possible to accidentally generate offsets which point to a position the "middle of a character" for "characters" which are composed of multiple code points (i.e. grapheme clusters).
+** *Grapheme clusters:* the character offsets would represent a "visible unit on screen" 
+   or put otherwise "as the unit the cursor jumps when pressing a cursor next to it and pressing the cursor left/right key". With grapheme cluster-based offsets, it should not be possible anymore to define an offset that points to the "middle of a character" as in the other encodings. However, what constitutes a grapheme cluster is not well defined and may differ from platform to platform, from programming language to programming language and even depend on the particular version of Unicode libraries and Unicode standard being used.footnote:[https://hsivonen.fi/string-length/]
+* There is a header key in the CAS which specifies which anchor encoding is being used 
+  (i.e. UTF-8, UTF-16, UTF-32/codepoints or grapheme clusters - the latter possibly along with a Unicode version number and possible with some closer description of which Unicode library and version of that library was being used). If the header is absent, a default encoding is prescribed by UIMA JSON CAS.
+
+== Future(!) directions
+
+This draft specification of the UIMA JSON CAS format tries to iron out the most basic aspects of the format. However, there are additional considerations on the radar which may or may not have influence on the format, even on the basics discussed here.
+
+The ideas presented in the rest of the document are currently not much more than that: ideas. The plan is to first implement a basic UIMA JSON CAS format (cf. draft specification above) and then in a future iteration turn an eye to the ideas presented below. Some of the ideas have significant implications on the overall implementation of UIMA systems that go well beyond the UIMA JSON CAS format itself.
+
+=== Advanced features and semantics
+
+==== Lenient deserialization
+
+Support for lenient deserialization. That means if a type is not present in the type system of the CAS that a JSON CAS is deserialized into (or in a separately given filter type system), then feature structures of that type are not de-serialized.
+
+==== Ability to represent partial CAS information
+
+There are many scenarios where it is not necessary to access all data from a CAS. For example, a CAS may contain a large amount of different types of annotations, but for the purpose of visualization, only a single type of information is required. Or it could be that multiple types of information should be visualized, but only for a certain part of a document. The ability to encode partial CASes should promote the usage of the format e.g. for querying, visualization, exchange of data between microservices and other similar tasks where the fast and efficient exchange of only a part of the full information encoded in the full CAS is important.
+
+Thus, when retrieving CAS data from a CAS storage, it should be possible to encoding just a subset of the original CAS information (e.g. only certain types or only data pertaining to a particular part of the document).
+
+This entails that the encoding format should allow for references to feature structures or other types of CAS objects (e.g. views) which are not returned (but which could be queried for if desired).
+
+==== Comparability
+
+It would be good if the UIM CAS JSON format (or more likely the (de)serializer implementations) would facilitate the ability to compare two CAS JSON files using a diff algorithm. There should be a recommended ordering of information at different levels, such as:
+
+* Order feature structures by their ID
+* Order features by their names (do consider or not consider markers like `@` for references?)
+* Reserved keywords should come before user-defined keywords (if applicable)
+
+==== Transient feature IDs
+
+NOTE: The topic of "CAS ID", "transient IDs" and "stable IDs" goes well beyond the JSON CAS format itself and into the API and management of the CAS objects in the UIMA framework - or at least into the topic of the definition of standard types able to carry such information (e.g. DocumentAnnotation or SourceDocumentInformation).
+
+IDs that are encoded in the JSON CAS should be maintained so that when deserializing and later serializing a JSON CAS, feature structures that are the same have retained their IDs. It is assumed that these IDs have a meaning outside the JSON CAS, e.g. that they can be repeatedly queried by their ID from a particular source/data storage. This is particularly relevant when obtaining partial CASes from a source.
+
+Regular feature structure IDs are positive integer number with 0 being reserved. That leaves the option for using negative numbers as transient feature structure IDs. That means the IDs are only used for ID/ID-REF mechanisms, but they have no particular meaning outside the particular JSON CAS. When a data sink encounters transient IDs, it may rewrite them either into other transient IDs or into stable IDs. In case of a partial serialization, not all references to an ID must be actually resolvable within the JSON CAS. However, references to transient IDs must always be resolvable even in a partial representation.
+
+==== CAS ID
+
+Similar to the ability of identifying individual feature structures in a CAS (see next section), it is often necessary to identify a CAS. This is not really an issue of the CAS JSON format but rather of a convention where to store this ID (e.g. in the SourceDocumentInformation or DocumentAnnotation types or in a new type), whether there is a recommended way to encode this ID (e.g. as a IRI or URI), and whether there is a recommended way of combining a CAS reference with a FS reference in order to an FS in one CAS to an FS in another CAS.
+
+==== Promotion
+
+The idea of "promotion" entails that option information can be omitted not only in the sense of omitting e.g. JSON keys but entire JSON structures. The idea is that this would improve the user experience of somebody e.g. sending data to a webservice expecting a JSON CAS in so far as that such a person would not have to add a lot of boilerplate to their request.
+
+Specifically, lets if a JSON CAS parser looks at a stream, then:
+
+* If the first character in the stream is a " (double quote), then it parses the string 
+  following that quote as the document text of the CAS in the default view.
+* If the first character in the stream is a [ (opening square bracket), then it parses 
+  that as an array of feature structures. If the feature structures include a view reference, then the view would be automatically and be created lazily during parsing. If they contain no view reference, then the default view is assumed.
+* If the first character in the stream is a \{ (opening curly bracket), then it expects 
+  a "full" CAS, i.e. an JSON object e.g, with keys for types, feature structures, etc.
+* If there is more content after parsing the particular structure, interpret that as a 
+  new JSON CAS. That would allow us to retrieve / encode multiple CASes in a single request/file.
+
+=== Edge-cases and optimizations
+
+==== sofaNum field
+
+The Apache UIMA Java SDK has a field "sofaNum" on the SofaFS. This field is automatically assigned when the SofA is created and we have no control over it. It also does not seem to be used anywhere. Still, it is a regular feature. Basically, it represents the order in which views were created in the CAS. The question is whether to serialize it or not.
+
+==== Document annotation
+
+Each view has one. Theoretically there could be more than one, but only one is *the* document annotation - for that we could use a flag or a rule like "any feature structure with type document annotation of a subtype thereof replaces the document annotation".
+
+.Alternatives:
+* If there are multiple document annotations in a serialized JSON CAS, then we should 
+  just take the first one to be *the* document annotation and the others are not. So we do not need a flag. But, we must ensure that the serializer always writes out *the* document annotation first.
+
+.See also
+* https://uima.apache.org/d/uimaj-current/apidocs/org/apache/uima/jcas/tcas/DocumentAnnotation.html[+++https://uima.apache.org/d/uimaj-current/apidocs/org/apache/uima/jcas/tcas/DocumentAnnotation.html+++]
+* link:++https://uima.apache.org/d/uimaj-current/apidocs/org/apache/uima/jcas/JCas.html#getDocumentAnnotationFs--++[+++https://uima.apache.org/d/uimaj-current/apidocs/org/apache/uima/jcas/JCas.html#getDocumentAnnotationFs--+++]

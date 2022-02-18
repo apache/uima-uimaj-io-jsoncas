@@ -1,0 +1,22 @@
+{
+  "%TYPES" : { },
+  "%FEATURE_STRUCTURES" : {
+    "1" : {
+      "%TYPE" : "uima.cas.ByteArray",
+      "%ELEMENTS" : "VGhpcyBpcyBhIHRlc3Q="
+    },
+    "2" : {
+      "%TYPE" : "uima.cas.Sofa",
+      "sofaNum" : 1,
+      "sofaID" : "_InitialView",
+      "mimeType" : "text/plain",
+      "@sofaArray" : 1
+    }
+  },
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 2,
+      "%MEMBERS" : [ ]
+    }
+  }
+}
