@@ -1,6 +1,26 @@
 = JSON serialization of the Apache UIMA CAS
 
-== Introduction
+== Getting started
+
+.Serializing a CAS to JSON
+[source,java]
+----
+import org.apache.uima.json.jsoncas2.JsonCas2Serializer
+
+CAS cas = ...;
+new JsonCas2Serializer().serialize(cas, new File("cas.json"));
+----
+
+.De-serializing a CAS from JSON
+[source,java]
+----
+import org.apache.uima.json.jsoncas2.JsonCas2Deserializer;
+
+CAS cas = ...; // The CAS must already be prepared with the type system used by the CAS JSON file
+new JsonCas2Deserializer().deserialize(new File("cas.json"), cas);
+----
+
+== Specification
 
 This document introduces a new JSON-based serialization format for the UIMA CAS. The new format aims to provide the new go-to solution for encoding UIMA CAS data and to facilitate working with such data cross-platform and cross-programming languages.
 
