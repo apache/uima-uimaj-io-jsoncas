@@ -189,6 +189,7 @@
                 <excludes combine.children="append">
                   <exclude>src/test/resources/**/data.json</exclude>
                   <exclude>src/test/resources/**/debug.xmi</exclude>
+                  <exclude>src/test/resources/**/typesystem.xml</exclude>
                   <exclude>src/test/resources/**/debug-typesystem.xml</exclude>
                 </excludes>
               </configuration>
