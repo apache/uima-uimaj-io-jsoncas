@@ -79,7 +79,9 @@ public class Fixtures
             jarFilePath = jarFilePath.substring(5);
 
             try {
-                FileUtils.forceDelete(dataBase.toFile());
+                if (Files.exists(dataBase)) {
+                  FileUtils.forceDelete(dataBase.toFile());
+                }
 
                 try (ZipFile zipFile = new ZipFile(jarFilePath)) {
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
