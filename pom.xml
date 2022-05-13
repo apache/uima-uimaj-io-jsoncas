@@ -25,7 +25,7 @@
     <groupId>org.apache.uima</groupId>
     <artifactId>parent-pom</artifactId>
     <relativePath />
-    <version>14</version>
+    <version>15-SNAPSHOT</version>
   </parent>
 
   <artifactId>uimaj-io-json</artifactId>
@@ -42,8 +42,9 @@
   <properties>
     <uima-version>3.3.0</uima-version>
     <slf4j-version>1.7.36</slf4j-version>
-    <log4j-version>2.17.1</log4j-version>
+    <log4j-version>2.17.2</log4j-version>
     <jackson-version>2.13.1</jackson-version>
+    <jackson-databind-version>${jackson-version}.2</jackson-databind-version>
     <junit-version>5.8.2</junit-version>
     <jsonunit-version>2.32.0</jsonunit-version>
 
@@ -51,7 +52,6 @@
     <maven.compiler.source>1.8</maven.compiler.source>
   </properties>
 
-  <!--  
   <repositories>
     <repository>
       <id>apache.snapshots</id>
@@ -65,7 +65,6 @@
       </snapshots>
     </repository>
   </repositories>
-  -->
   
   <dependencies>
     <dependency>
@@ -82,7 +81,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson-version}</version>
+      <version>${jackson-databind-version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
