@@ -103,9 +103,9 @@ The document defines several marker prefixes for JSON object keys. For the reade
 [width="100%",cols="11%,56%,33%",options="header",]
 |===
 |*Marker* |*Description* |*Examples*
-|`%` |Keyword marker |"%ID", "%TYPES"
-|`^` |Anchor marker on feature name keys |"^begin", "^end"
-|`@` |Reference marker on feature name keys |"@sofa"
+|`%` |Keyword marker | `%ID`, `%TYPES`
+|`^` |Anchor marker on feature name keys |`^begin`, `^end`
+|`@` |Reference marker on feature name keys |`@sofa`
 |===
 
 ==== UIMA JSON CAS keywords
