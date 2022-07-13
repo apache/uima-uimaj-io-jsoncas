@@ -24,9 +24,12 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.uima.cas.serdes.SerDesCasIOTestUtils.createCasMaybeWithTypesystem;
 import static org.apache.uima.cas.serdes.SerDesCasIOTestUtils.CasLoadOptions.PRESERVE_ORIGINAL_TSI;
 import static org.apache.uima.cas.serdes.TestType.ONE_WAY;
+import static org.apache.uima.cas.serdes.TestType.ROUND_TRIP;
 import static org.apache.uima.cas.serdes.TestType.SER_DES;
 import static org.apache.uima.cas.serdes.TestType.SER_REF;
 import static org.apache.uima.json.jsoncas2.Fixtures.readCasManager;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.contentOf;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +38,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.impl.CASImpl;
@@ -60,6 +66,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class CasSerializationDeserialization_JsonCas2_FsAsObject_Test {
 
   private static final String CAS_FILE_NAME = "data.json";
+
   private static final int RANDOM_CAS_ITERATIONS = 20;
 
   private static final List<CasSerDesCycleConfiguration> serDesCycles = asList( //
@@ -122,7 +129,7 @@ public class CasSerializationDeserialization_JsonCas2_FsAsObject_Test {
         ((CASImpl) aTargetCas).getBinaryCasSerDes()
                 .setupCasFromCasMgrSerializer(readCasManager(tsiSource));
       }
-      
+
       JsonCas2Deserializer deserializer = new JsonCas2Deserializer();
       deserializer.setFsMode(FeatureStructuresMode.AS_OBJECT);
       deserializer.deserialize(is, aTargetCas);
@@ -145,16 +152,40 @@ public class CasSerializationDeserialization_JsonCas2_FsAsObject_Test {
 
   private static List<SerRefTestScenario> oneWayDesSerScenarios() throws Exception {
     Class<?> caller = CasSerializationDeserialization_JsonCas2_FsAsObject_Test.class;
-    return XmiFileDataSuite
-            .configurations(Fixtures.materializeTestSuite()).stream()
+    return XmiFileDataSuite.configurations(Fixtures.materializeTestSuite()).stream()
             .map(conf -> SerRefTestScenario.builder(caller, conf, ONE_WAY, CAS_FILE_NAME)
                     .withSerializer((cas, path) -> ser(cas, path)).build())
             .collect(toList());
   }
 
   private static List<DesSerTestScenario> roundTripDesSerScenarios() throws Exception {
-    return SerDesCasIOTestUtils.roundTripDesSerScenariosComparingFileContents(desSerCycles,
-            CAS_FILE_NAME);
+    Class<?> caller = CasSerializationDeserialization_JsonCas2_FsAsObject_Test.class;
+    return desSerCycles.stream().flatMap(cycle -> {
+      List<DesSerTestScenario> confs = new ArrayList<>();
+
+      try (Stream<DesSerTestScenario.Builder> builders = DesSerTestScenario.builderCases(caller,
+              cycle, ROUND_TRIP, CAS_FILE_NAME)) {
+
+        builders.map(builder -> builder.withCycle(cycle::performCycle) //
+                .withAssertion((targetCasFile, referenceCasFile) -> {
+                  assertThat(contentOf(targetCasFile.toFile()))
+                          .isEqualToIgnoringNewLines(contentOf(referenceCasFile.toFile()));
+                }) //
+                .build()) //
+                .forEach(confs::add);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      return confs.stream();
+    }).collect(Collectors.toList());
+
+    // FIXME: We cannot use roundTripDesSerScenariosComparingFileContents because it does a binary
+    // comparison and JSON is a text format which can have different line endings on Windows/Unix.
+    // We would need a line-ending normalizing comparison which is currently (3.3.0) not provided by
+    // the UIMA Java SDK.
+    // return SerDesCasIOTestUtils.roundTripDesSerScenariosComparingFileContents(desSerCycles,
+    // CAS_FILE_NAME);
   }
 
   private static List<SerDesTestScenario> serDesScenarios() {
