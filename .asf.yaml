@@ -30,10 +30,12 @@ github:
   - apache
   - uima
   - text-analysis
+  - java
+  - json
   features:
     wiki: false
-    issues: false
-    projects: false
+    issues: true
+    projects: true
   enabled_merge_buttons:
     squash:  true
     merge:   true
