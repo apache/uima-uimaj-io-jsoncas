@@ -94,6 +94,10 @@ public class Fixtures
                         }
 
                         Path target = targetBase.resolve(name);
+
+                      if (!target.normalize().startsWith(targetBase.normalize())) {
+                        throw new RuntimeException("Bad zip entry");
+                      }
                         Files.createDirectories(target.getParent());
 
                         try (InputStream eis = zipFile.getInputStream(entry);
