@@ -68,9 +68,12 @@ public class CasSerializer extends StdSerializer<CAS> {
 
     serializeHeader(aCas, aJg, aProvider);
 
+    FeatureStructures allFSes = findAllFeatureStructures(aCas);
+    FeatureStructures.set(aProvider, allFSes);
+
     serializeTypes(aCas, aJg, aProvider);
 
-    serializeFeatureStructures(aCas, aJg, aProvider);
+    serializeFeatureStructures(allFSes, aJg, aProvider);
 
     serializeViews(aCas, aJg, aProvider);
 
@@ -94,13 +97,12 @@ public class CasSerializer extends StdSerializer<CAS> {
     }
   }
 
-  private void serializeFeatureStructures(CAS aCas, JsonGenerator aJg, SerializerProvider aProvider)
+  private void serializeFeatureStructures(FeatureStructures aAllFSes, JsonGenerator aJg, SerializerProvider aProvider)
           throws IOException {
-    FeatureStructures allFSes = findAllFeatureStructures(aCas);
-    FeatureStructureToViewIndex.set(aProvider, new FeatureStructureToViewIndex(allFSes));
-    if (!allFSes.isEmpty()) {
+    FeatureStructureToViewIndex.set(aProvider, new FeatureStructureToViewIndex(aAllFSes));
+    if (!aAllFSes.isEmpty()) {
       aJg.writeFieldName(FEATURE_STRUCTURES_FIELD);
-      aProvider.defaultSerializeValue(allFSes, aJg);
+      aProvider.defaultSerializeValue(aAllFSes, aJg);
     }
   }
 

@@ -40,16 +40,11 @@ import org.apache.uima.util.CasCreationUtils;
 import org.apache.uima.util.TypeSystemUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class FeatureDeSerializerTest {
-  private Logger log = LoggerFactory.getLogger(getClass());
-
   private static final String TYPE = "Type";
   private static final String FEATURE = "feature";
 
