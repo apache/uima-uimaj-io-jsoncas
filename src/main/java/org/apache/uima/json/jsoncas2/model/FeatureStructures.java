@@ -18,24 +18,38 @@
  */
 package org.apache.uima.json.jsoncas2.model;
 
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.uima.cas.FeatureStructure;
+import com.fasterxml.jackson.databind.DatabindContext;
 
 public class FeatureStructures implements Iterable<FeatureStructure> {
+  public static final String ALL_FEATURE_STRUCTURES = "UIMA.AllFeatureStructures";
+
   private final List<FeatureStructure> featureStructures;
 
+  private final Set<String> typeNames;
+
   public FeatureStructures(Collection<FeatureStructure> aFeatureStructures) {
+    typeNames = new HashSet<>();
     featureStructures = aFeatureStructures.stream() //
-            .sorted(Comparator.comparing(fs -> {
-              return fs.getType().getName();
-            })) //
+            .map(fs -> {
+              typeNames.add(fs.getType().getName());
+              return fs;
+            }) //
+            .sorted(comparing(fs -> fs.getType().getName())) //
             .collect(toList());
+  }
+
+  public boolean existsAnnotationOfType(String aTypeName) {
+    return typeNames.contains(aTypeName);
   }
 
   @Override
@@ -45,5 +59,13 @@ public class FeatureStructures implements Iterable<FeatureStructure> {
 
   public boolean isEmpty() {
     return featureStructures.isEmpty();
+  }
+
+  public static void set(DatabindContext aProvider, FeatureStructures aAllFs) {
+    aProvider.setAttribute(ALL_FEATURE_STRUCTURES, aAllFs);
+  }
+
+  public static FeatureStructures get(DatabindContext aProvider) {
+    return (FeatureStructures) aProvider.getAttribute(ALL_FEATURE_STRUCTURES);
   }
 }

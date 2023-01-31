@@ -20,6 +20,7 @@ package org.apache.uima.json.jsoncas2.ser;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.uima.json.jsoncas2.JsonCas2Names.ELEMENT_TYPE_FIELD;
+import static org.apache.uima.json.jsoncas2.JsonCas2Names.NAME_FIELD;
 import static org.apache.uima.json.jsoncas2.JsonCas2Names.SUPER_TYPE_FIELD;
 
 import java.io.IOException;
@@ -28,8 +29,6 @@ import java.util.List;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.TypeImpl;
-import org.apache.uima.json.jsoncas2.JsonCas2Names;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
@@ -46,7 +45,7 @@ public class TypeSerializer extends StdSerializer<Type> {
           throws IOException {
     aJg.writeStartObject(aType);
 
-    aJg.writeStringField(JsonCas2Names.NAME_FIELD, aType.getName());
+    aJg.writeStringField(NAME_FIELD, aType.getName());
 
     Type parent = ((TypeImpl) aType).getSuperType();
     if (parent != null) {
@@ -57,13 +56,12 @@ public class TypeSerializer extends StdSerializer<Type> {
       aJg.writeStringField(ELEMENT_TYPE_FIELD, aType.getComponentType().getName());
     }
 
-    List<Feature> newFeatures = aType.getFeatures().stream().filter(f -> f.getDomain() == aType)
+    List<Feature> localFeatures = aType.getFeatures().stream() //
+            .filter(f -> f.getDomain() == aType) //
             .collect(toList());
-    if (!newFeatures.isEmpty()) {
-      for (Feature feature : newFeatures) {
-        aJg.writeFieldName(feature.getShortName());
-        aProvider.defaultSerializeValue(feature, aJg);
-      }
+    for (Feature feature : localFeatures) {
+      aJg.writeFieldName(feature.getShortName());
+      aProvider.defaultSerializeValue(feature, aJg);
     }
 
     aJg.writeEndObject();
