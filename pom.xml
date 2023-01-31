@@ -23,7 +23,7 @@
     <groupId>org.apache.uima</groupId>
     <artifactId>parent-pom</artifactId>
     <relativePath />
-    <version>15</version>
+    <version>16</version>
   </parent>
 
   <artifactId>uimaj-io-json</artifactId>
@@ -40,7 +40,7 @@
 
   <properties>
     <jiraVersion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}jsoncas</jiraVersion>
-    <uima-version>3.3.0</uima-version>
+    <uima-version>3.3.1</uima-version>
     <slf4j-version>1.7.36</slf4j-version>
     <log4j-version>2.17.2</log4j-version>
     <jackson-version>2.13.3</jackson-version>
