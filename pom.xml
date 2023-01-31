@@ -38,6 +38,11 @@
     <tag>HEAD</tag>
   </scm>
 
+  <issueManagement>
+    <system>Github</system>
+    <url>https://github.com/apache/uima-uimaj-io-jsoncas/issues</url>
+  </issueManagement>
+
   <properties>
     <jiraVersion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}jsoncas</jiraVersion>
     <uima-version>3.3.1</uima-version>
