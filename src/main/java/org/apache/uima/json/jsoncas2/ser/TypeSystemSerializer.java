@@ -24,14 +24,19 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.apache.uima.cas.CAS;
+import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.TypeSystem;
+import org.apache.uima.json.jsoncas2.mode.TypeSystemMode;
+import org.apache.uima.json.jsoncas2.model.FeatureStructures;
 import org.apache.uima.json.jsoncas2.ref.ReferenceCache;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -41,7 +46,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 public class TypeSystemSerializer extends StdSerializer<TypeSystem> {
   private static final long serialVersionUID = -4369127219437592227L;
 
-  private final Set<String> BUILT_IN_TYPES = unmodifiableSet(new HashSet<>(asList(
+  private static final Set<String> BUILT_IN_TYPES = unmodifiableSet(new HashSet<>(asList(
           CAS.TYPE_NAME_ANNOTATION, CAS.TYPE_NAME_ANNOTATION_BASE, CAS.TYPE_NAME_ARRAY_BASE,
           CAS.TYPE_NAME_BOOLEAN, CAS.TYPE_NAME_BOOLEAN_ARRAY, CAS.TYPE_NAME_BYTE,
           CAS.TYPE_NAME_BYTE_ARRAY, CAS.TYPE_NAME_DOCUMENT_ANNOTATION, CAS.TYPE_NAME_DOUBLE,
@@ -65,11 +70,9 @@ public class TypeSystemSerializer extends StdSerializer<TypeSystem> {
           throws IOException {
     ReferenceCache refCache = ReferenceCache.get(aProvider);
 
-    jg.writeStartObject(aTypeSystem);
+    List<Type> types = findTypesToSerialize(aTypeSystem, aProvider);
 
-    List<Type> types = StreamSupport.stream(aTypeSystem.spliterator(), false)
-            .sorted(comparing(Type::getName))
-            .filter(type -> !BUILT_IN_TYPES.contains(type.getName())).collect(toList());
+    jg.writeStartObject(aTypeSystem);
 
     for (Type type : types) {
       jg.writeFieldName(refCache.typeRef(type));
@@ -78,5 +81,66 @@ public class TypeSystemSerializer extends StdSerializer<TypeSystem> {
     }
 
     jg.writeEndObject();
+  }
+
+  private List<Type> findTypesToSerialize(TypeSystem aTypeSystem, SerializerProvider aProvider) {
+    Iterable<Type> typesSource = aTypeSystem;
+
+    if (TypeSystemMode.get(aProvider) == TypeSystemMode.MINIMAL) {
+      Deque<Type> queue = collectTypesUsedByFeatureStructures(aTypeSystem, aProvider);
+      typesSource = collectTypesUsedByTypes(aTypeSystem, typesSource, queue);
+    }
+
+    return StreamSupport.stream(typesSource.spliterator(), false) //
+            .filter(type -> !type.isArray()) //
+            .filter(type -> !BUILT_IN_TYPES.contains(type.getName())) //
+            .sorted(comparing(Type::getName)) //
+            .collect(toList());
+  }
+
+  private Set<Type> collectTypesUsedByTypes(TypeSystem aTypeSystem, Iterable<Type> typesSource, Deque<Type> queue) {
+    Set<Type> typeSet = new HashSet<>();
+    while (!queue.isEmpty()) {
+      Type t = queue.poll();
+
+      if (typeSet.contains(t)) {
+        continue;
+      }
+
+      for (Feature f : t.getFeatures()) {
+        Type parent = aTypeSystem.getParent(t);
+        while (parent != null) {
+          if (!typeSet.contains(parent)) {
+            queue.add(parent);
+          }
+          parent = aTypeSystem.getParent(parent);
+        }
+        
+        Type range = f.getRange();
+        if (!typeSet.contains(range)) {
+          queue.add(range);
+        }
+        
+        Type componentType = range.getComponentType();
+        if (componentType != null && !typeSet.contains(typesSource)) {
+          queue.add(componentType);
+        }
+      }
+      
+      typeSet.add(t);
+    }
+    return typeSet;
+  }
+
+  private Deque<Type> collectTypesUsedByFeatureStructures(TypeSystem aTypeSystem,
+          SerializerProvider aProvider) {
+    FeatureStructures allFs = FeatureStructures.get(aProvider);
+    Deque<Type> queue = new ArrayDeque<>();
+    aTypeSystem.forEach(type -> {
+      if (allFs.existsAnnotationOfType(type.getName())) {
+        queue.add(type);
+      }
+    });
+    return queue;
   }
 }

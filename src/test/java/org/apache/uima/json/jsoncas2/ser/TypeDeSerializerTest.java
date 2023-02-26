@@ -31,16 +31,11 @@ import org.apache.uima.resource.metadata.TypeDescription;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
 import org.apache.uima.util.CasCreationUtils;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class TypeDeSerializerTest {
-  private Logger log = LoggerFactory.getLogger(getClass());
-
   @Test
   public void thatTypeDeSerializationWorks() throws Exception {
     ObjectMapper mapper = getMapper();

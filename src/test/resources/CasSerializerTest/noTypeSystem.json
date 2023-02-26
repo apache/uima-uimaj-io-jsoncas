@@ -1,0 +1,20 @@
+{
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 1,
+    "%TYPE" : "custom.UsedAnnotationType",
+    "@sofa" : 2,
+    "begin" : 0,
+    "end" : 0
+  }, {
+    "%ID" : 2,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView"
+  } ],
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 2,
+      "%MEMBERS" : [ 1 ]
+    }
+  }
+}
