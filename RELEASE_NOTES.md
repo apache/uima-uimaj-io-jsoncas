@@ -19,7 +19,7 @@
 ***************************************************************
 -->
    
-# Apache UIMA Java SDK JSON CAS I/O (TM) v0.4.0
+# Apache UIMA Java SDK JSON CAS I/O (TM) v0.5.0
 
 The JSON CAS I/O implementation for use with the UIMA Java SDK allows to serialize UIMA CAS data to
 JSON and to de-serialize the data back from JSON again, loading it into a CAS object. The aim of
@@ -29,7 +29,7 @@ different character offset counting strategies used by different languages such 
 A Python-based implementation of the UIMA JSON CAS format is available as part of the third-party
 [DKPro Cassis](https://github.com/dkpro/dkpro-cassis) library.
 
-This is the first public release based on the JSON serialization of the Apache UIMA CAS draft
+This is an early public release based on the JSON serialization of the Apache UIMA CAS draft
 specification version 0.4.0. Please note that the implementation and the specification are not yet
 final. For this reason, is not yet recommended to use this library in scenarios where data needs to
 be stored or archived over an extended period of time as future versions of the implementation and
@@ -37,13 +37,23 @@ specification may introduce incompatibilities with the current version. Good usa
 for example short-term data exchange between different UIMA implementations such as for example in
 network communication.
 
-A [full list of issues](https://issues.apache.org/jira/issues/?jql=project%20%3D%20UIMA%20AND%20fixVersion%20%3D%200.4.0jsoncas) addressed in this release can be found on issue tracker.
+## What's Changed
+* ⭐️ Issue #13: Implement TypeSystemMode.MINIMAL by @reckart in https://github.com/apache/uima-uimaj-io-jsoncas/pull/15
+* 🦟 Issue #18: Fix Zip Slip Vulnerability in test code by @JLLeitschuh in https://github.com/apache/uima-uimaj-io-jsoncas/pull/10
+* 🩹 Issue #14: Upgrade dependencies by @reckart in https://github.com/apache/uima-uimaj-io-jsoncas/pull/16, https://github.com/apache/uima-uimaj-io-jsoncas/pull/17
 
-Please use the [mailing lists](https://uima.apache.org/mail-lists.html) for feedback and the [issue tracker](https://issues.apache.org/jira/browse/uima) to report bugs.
+## New Contributors
+* @JLLeitschuh made their first contribution in https://github.com/apache/uima-uimaj-io-jsoncas/pull/10
+
+**Full Changelog**: https://github.com/apache/uima-uimaj-io-jsoncas/compare/rel/uimaj-io-json-0.4.0...uimaj-io-json-0.5.0
+
+A [full list of issues](https://github.com/apache/uima-uimaj-io-jsoncas/issues?q=is%3Aissue+milestone%3A0.5.0+is%3Aclosed) addressed in this release can be found on issue tracker.
+
+Please use the [mailing lists](https://uima.apache.org/mail-lists.html) for feedback and the [issue tracker](https://github.com/apache/uima-uimaj-io-jsoncas/issues) to report bugs.
 
 ## Supported Platforms
 
-UIMA Java SDK JSON CAS I/O v0.4.0 should be used in combination with
+This version of UIMA Java SDK JSON CAS I/O should be used in combination with
 
 - Java 1.8 or higher
-- UIMA Java SDK 3.3.0 or higher
+- UIMA Java SDK 3.4.1 or higher
