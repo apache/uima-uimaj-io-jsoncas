@@ -64,7 +64,7 @@ class CasSerializerTest {
     sut.setTypeSystemMode(TypeSystemMode.MINIMAL);
     sut.serialize(cas, out);
 
-    assertThat(contentOf(out, UTF_8)).isEqualTo(
+    assertThat(contentOf(out, UTF_8)).isEqualToNormalizingNewlines(
             contentOf(getClass().getResource("/CasSerializerTest/minimalTypeSystem.json"), UTF_8));
   }
 
@@ -78,7 +78,7 @@ class CasSerializerTest {
     sut.setTypeSystemMode(TypeSystemMode.FULL);
     sut.serialize(cas, out);
 
-    assertThat(contentOf(out, UTF_8)).isEqualTo(
+    assertThat(contentOf(out, UTF_8)).isEqualToNormalizingNewlines(
             contentOf(getClass().getResource("/CasSerializerTest/fullTypeSystem.json"), UTF_8));
   }
 
@@ -92,7 +92,7 @@ class CasSerializerTest {
     sut.setTypeSystemMode(TypeSystemMode.NONE);
     sut.serialize(cas, out);
 
-    assertThat(contentOf(out, UTF_8)).isEqualTo(
+    assertThat(contentOf(out, UTF_8)).isEqualToNormalizingNewlines(
             contentOf(getClass().getResource("/CasSerializerTest/noTypeSystem.json"), UTF_8));
   }
 
