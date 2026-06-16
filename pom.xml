@@ -23,7 +23,7 @@
     <groupId>org.apache.uima</groupId>
     <artifactId>parent-pom</artifactId>
     <relativePath />
-    <version>16</version>
+    <version>18</version>
   </parent>
 
   <artifactId>uimaj-io-json</artifactId>
@@ -53,8 +53,16 @@
     <junit-version>5.9.2</junit-version>
     <jsonunit-version>2.36.1</jsonunit-version>
 
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>
+    <!-- BEGIN PROFILE SETTINGS: generate-release-notes-->
+    <github-repository>uima-uimaj-io-jsoncas</github-repository>
+    <git-branch>main</git-branch>
+    <previous-release-version>0.5.0</previous-release-version>
+    <!-- END PROFILE SETTINGS: generate-release-notes-->
+
+    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
+    <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+    <maven.compiler.proc>none</maven.compiler.proc>
   </properties>
 
   <dependencies>
@@ -169,27 +177,6 @@
   </dependencies>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-toolchains-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>toolchain</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <toolchains>
-            <jdk>
-              <version>${maven.compiler.target}</version>
-            </jdk>
-          </toolchains>
-        </configuration>
-      </plugin>
-    </plugins>
-
     <pluginManagement>
       <plugins>
         <plugin>
