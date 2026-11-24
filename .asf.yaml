@@ -24,7 +24,7 @@ notifications:
 
 github:
   description: "Apache UIMA Java SDK JSON CAS Support"
-  homepage: https://uima.apache.org/
+  homepage: https://uima.apache.org
   dependabot_alerts:  true
   dependabot_updates: false
   labels:
